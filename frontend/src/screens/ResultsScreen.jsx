@@ -43,10 +43,15 @@ export default function ResultsScreen({ result, onRetake, onGoToHistory }) {
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 p-5 border border-white/10 text-center shadow-2xl">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2.5 border backdrop-blur-md"
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-1 border backdrop-blur-md"
              style={{ backgroundColor: 'rgba(0, 242, 254, 0.08)', borderColor: 'rgba(0, 242, 254, 0.25)', color: '#00f2fe' }}>
           <Sparkles size={12} /> {result.sport || 'Sports'} Assessment Complete
         </div>
+        {result.video_filename && (
+          <p className="text-[10px] text-slate-400 font-mono truncate max-w-[280px] mx-auto mb-1">
+            Clip: {result.video_filename}
+          </p>
+        )}
 
         {/* Score Ring */}
         <div className="relative w-32 h-32 mx-auto my-2 flex items-center justify-center">

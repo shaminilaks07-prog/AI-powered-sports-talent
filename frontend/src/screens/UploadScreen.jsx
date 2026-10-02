@@ -21,8 +21,19 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (!file.type.startsWith('video/')) {
-        setErrorMsg('Please select a valid video file (.mp4, .mov, .webm, etc.)');
+      const validExts = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.m4v'];
+      const hasValidExt = validExts.some((ext) => file.name.toLowerCase().endsWith(ext));
+      
+      if (!file.type.startsWith('video/') && !hasValidExt) {
+        setErrorMsg('Please select a valid sports video file (.mp4, .mov, .webm, .avi, .mkv).');
+        return;
+      }
+      if (file.size > 60 * 1024 * 1024) {
+        setErrorMsg('Selected video is too large (maximum 60MB). Please select a shorter 5-30 second sports clip.');
+        return;
+      }
+      if (file.size === 0) {
+        setErrorMsg('Selected video file is empty. Please select a valid sports recording.');
         return;
       }
       setVideoFile(file);
@@ -31,12 +42,44 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
     }
   };
 
-  const handleSelectSample = (sampleName) => {
-    // Create a mock video blob for testing if the user doesn't have a video file handy
-    const mockFile = new File(['mock_video_bytes'], `${sampleName.toLowerCase()}_sample.mp4`, { type: 'video/mp4' });
-    setVideoFile(mockFile);
-    setPreviewUrl(null);
+  const handleSelectSample = async (sampleName) => {
     setErrorMsg('');
+    let sampleFilename = 'deep_squat_sample.mp4';
+    let sportCategory = 'Fitness/Squats';
+
+    if (sampleName.includes('Bowling')) {
+      sampleFilename = 'bowling_sample.mp4';
+      sportCategory = 'Cricket';
+    } else if (sampleName.includes('Jump')) {
+      sampleFilename = 'jump_shot_sample.mp4';
+      sportCategory = 'Basketball';
+    } else if (sampleName.includes('Sprint')) {
+      sampleFilename = 'sprint_sample.mp4';
+      sportCategory = 'Sprinting';
+    } else if (sampleName.includes('Squat')) {
+      sampleFilename = 'deep_squat_sample.mp4';
+      sportCategory = 'Fitness/Squats';
+    }
+
+    setSelectedSport(sportCategory);
+
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/uploads/${sampleFilename}`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const file = new File([blob], sampleFilename, { type: 'video/mp4' });
+        setVideoFile(file);
+        setPreviewUrl(URL.createObjectURL(blob));
+      } else {
+        const mockFile = new File(['sample_clip'], sampleFilename, { type: 'video/mp4' });
+        setVideoFile(mockFile);
+        setPreviewUrl(null);
+      }
+    } catch (e) {
+      const mockFile = new File(['sample_clip'], sampleFilename, { type: 'video/mp4' });
+      setVideoFile(mockFile);
+      setPreviewUrl(null);
+    }
   };
 
   const handleStartAnalysis = async () => {
@@ -48,17 +91,17 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
     setAnalyzing(true);
     setErrorMsg('');
 
-    // Step-by-step progress feedback for computer vision
-    setAnalyzingStep('Loading video into computer vision pipeline...');
-    await new Promise((r) => setTimeout(r, 600));
+    // Step-by-step progress feedback for computer vision pipeline
+    setAnalyzingStep('Uploading sports recording to backend server...');
+    await new Promise((r) => setTimeout(r, 400));
 
     setAnalyzingStep('MediaPipe Pose: Extracting 33 human joint coordinates...');
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 500));
 
     setAnalyzingStep('Computing kinetic angles & velocity vectors...');
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 500));
 
-    setAnalyzingStep('Generating talent score & AI coach feedback...');
+    setAnalyzingStep('Evaluating talent scores & AI coach feedback...');
 
     const formData = new FormData();
     formData.append('sport', selectedSport);

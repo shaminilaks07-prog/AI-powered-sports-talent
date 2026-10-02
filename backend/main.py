@@ -106,19 +106,64 @@ def login_user(creds: UserLoginRequest):
         }
     }
 
+import time
+
+ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".webm", ".mkv", ".m4v"}
+MAX_VIDEO_SIZE = 60 * 1024 * 1024  # 60 MB
+
 @app.post("/api/assessments/analyze")
 async def analyze_and_record(
     sport: str = Form("General"),
     user_id: int = Form(1),
     video: UploadFile = File(...)
 ):
-    # Save video file
-    safe_filename = f"user_{user_id}_{sport.lower().replace(' ', '_')}_{video.filename}"
+    # Validate filename and extension
+    original_filename = os.path.basename(video.filename or "video.mp4")
+    ext = os.path.splitext(original_filename)[1].lower()
+    
+    if ext not in ALLOWED_VIDEO_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file format '{ext}'. Please upload a valid sports video clip (.mp4, .mov, .webm, .avi, .mkv)."
+        )
+
+    # Generate safe unique filename
+    timestamp = int(time.time())
+    safe_sport = "".join(c if c.isalnum() else "_" for c in sport.lower())
+    safe_clean_name = "".join(c for c in original_filename if c.isalnum() or c in "._-")
+    safe_filename = f"user_{user_id}_{timestamp}_{safe_sport}_{safe_clean_name}"
     file_path = os.path.join(UPLOAD_DIR, safe_filename)
     
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(video.file, buffer)
-        
+    # Save video file and enforce size limits
+    file_size = 0
+    try:
+        with open(file_path, "wb") as buffer:
+            while chunk := await video.read(1024 * 1024):  # 1MB chunks
+                file_size += len(chunk)
+                if file_size > MAX_VIDEO_SIZE:
+                    buffer.close()
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Video file exceeds 60MB limit. Please upload a short 5-30 second video clip."
+                    )
+                buffer.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as e:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(status_code=500, detail=f"Failed to save video: {str(e)}")
+
+    if file_size == 0:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded video file is empty. Please select a valid sports recording."
+        )
+
     try:
         # Run AI Pose Assessment Engine
         analysis = analyze_video_pose(file_path, sport=sport)
@@ -154,6 +199,8 @@ async def analyze_and_record(
             "message": "Video analyzed and assessment saved successfully!",
             "data": analysis
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
 

@@ -79,47 +79,24 @@ export async function loginUser(credentials) {
 }
 
 export async function uploadAndAnalyzeVideo(formData) {
+  let response;
   try {
-    const response = await fetch(`${API_BASE_URL}/api/assessments/analyze`, {
+    response = await fetch(`${API_BASE_URL}/api/assessments/analyze`, {
       method: 'POST',
       body: formData,
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || 'Video analysis failed');
-    return data;
-  } catch (error) {
-    console.warn('Backend analysis failed, generating fallback client assessment:', error);
-    // Return a structured assessment object
-    return {
-      success: true,
-      data: {
-        id: Date.now(),
-        sport: formData.get('sport') || 'General',
-        overall_score: 86.5,
-        metrics: [
-          { name: 'Posture & Alignment', score: 88, unit: '%', target: '85-95%', feedback: 'Excellent spine neutrality and balanced base.' },
-          { name: 'Joint Range of Motion', score: 84, unit: '°', target: '90° ± 10°', feedback: 'Proper depth and joint control during execution.' },
-          { name: 'Movement Velocity', score: 82, unit: 'pts', target: '> 80 pts', feedback: 'Fast acceleration and consistent momentum transfer.' },
-          { name: 'Bilateral Symmetry', score: 92, unit: '%', target: '> 85%', feedback: 'Equal balance and power distribution between limbs.' },
-        ],
-        strengths: [
-          'High bilateral symmetry and balance',
-          'Stable hip alignment during peak movement phase',
-          'Smooth deceleration and controlled landing'
-        ],
-        weaknesses: [
-          'Slight knee valgus (inward shift) under heavy deceleration',
-          'Forward head posture on high-speed transitions'
-        ],
-        suggestions: [
-          'Incorporate lateral band walks and glute bridges.',
-          'Focus on keeping your chest proud and chin tucked during initiation.',
-          'Add single-leg balance drills to strengthen stabilizer muscles.'
-        ],
-        created_at: new Date().toISOString()
-      }
-    };
+  } catch (networkError) {
+    console.warn('Backend server unreachable:', networkError.message);
+    throw new Error('Cannot connect to Python backend. Please verify FastAPI is running on http://127.0.0.1:8000.');
   }
+
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const errorMsg = data?.detail || `Analysis failed (HTTP ${response.status})`;
+    throw new Error(errorMsg);
+  }
+
+  return data;
 }
 
 export async function fetchUserAssessments(userId) {
