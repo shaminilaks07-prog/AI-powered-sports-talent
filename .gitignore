@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .env
 dist/
+backend/uploads/*
+!backend/uploads/.gitkeep
+/backend/sports_talent.db

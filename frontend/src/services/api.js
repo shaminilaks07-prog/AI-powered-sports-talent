@@ -1,6 +1,6 @@
 /**
- * API Service for interacting with the FastAPI Python Backend.
- * Includes local storage fallback so the user can test offline if needed.
+ * API Service for connecting frontend with FastAPI Python Backend.
+ * Standardizes endpoints with comprehensive error handling and offline fallbacks.
  */
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
@@ -27,18 +27,8 @@ export async function registerUser(userData) {
     if (!response.ok) throw new Error(data.detail || 'Registration failed');
     return data;
   } catch (error) {
-    // If backend is down, fallback to local storage for testing
-    console.warn('API register failed, saving to localStorage:', error);
-    const mockUser = {
-      id: Date.now(),
-      name: userData.name,
-      email: userData.email,
-      age: userData.age || 18,
-      gender: userData.gender || 'Other',
-      primary_sport: userData.primary_sport || 'General',
-    };
-    localStorage.setItem('currentUser', JSON.stringify(mockUser));
-    return { success: true, message: 'Registered locally (offline mode)', user: mockUser };
+    console.warn('API register failed, checking error:', error);
+    throw error;
   }
 }
 
@@ -53,28 +43,56 @@ export async function loginUser(credentials) {
     if (!response.ok) throw new Error(data.detail || 'Login failed');
     return data;
   } catch (error) {
-    console.warn('API login failed, checking localStorage:', error);
-    const saved = localStorage.getItem('currentUser');
-    if (saved) {
-      const user = JSON.parse(saved);
-      if (user.email === credentials.email) {
-        return { success: true, message: 'Logged in locally (offline mode)', user };
-      }
-    }
-    // Demo account for quick testing
+    // Demo Account Fallback for offline testing
     if (credentials.email === 'athlete@demo.com' && credentials.password === 'password123') {
       const demoUser = {
         id: 1,
-        name: 'Alex Rivera',
+        name: 'Arjun Patel',
         email: 'athlete@demo.com',
-        age: 19,
+        age: 18,
         gender: 'Male',
-        primary_sport: 'Cricket',
+        primary_sport: 'Sit-ups and Core Endurance',
+        location: 'Ranchi, Jharkhand',
+        fitness_goals: 'Build core endurance and athletic stamina for national junior trials',
+        bio: 'Aspiring grassroots track & endurance athlete.',
+        coach_share_enabled: true
       };
-      localStorage.setItem('currentUser', JSON.stringify(demoUser));
       return { success: true, message: 'Logged in with Demo Account', user: demoUser };
     }
-    throw new Error('Invalid email or password. You can use athlete@demo.com / password123 for testing.');
+    throw error;
+  }
+}
+
+export async function fetchAthleteProfile(userId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/athletes/${userId}`);
+    if (!response.ok) throw new Error('Failed to fetch athlete profile');
+    return await response.json();
+  } catch (error) {
+    console.warn('Profile fetch error:', error);
+    return null;
+  }
+}
+
+export async function updateAthleteProfile(userId, profileData) {
+  const response = await fetch(`${API_BASE_URL}/api/athletes/${userId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profileData),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to update profile');
+  return data;
+}
+
+export async function fetchAthleteProgress(userId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/athletes/${userId}/progress`);
+    if (!response.ok) throw new Error('Failed to fetch athlete progress');
+    return await response.json();
+  } catch (error) {
+    console.warn('Progress fetch error:', error);
+    return null;
   }
 }
 
@@ -86,7 +104,6 @@ export async function uploadAndAnalyzeVideo(formData) {
       body: formData,
     });
   } catch (networkError) {
-    console.warn('Backend server unreachable:', networkError.message);
     throw new Error('Cannot connect to Python backend. Please verify FastAPI is running on http://127.0.0.1:8000.');
   }
 
@@ -105,8 +122,52 @@ export async function fetchUserAssessments(userId) {
     if (!response.ok) throw new Error('Failed to fetch assessment history');
     return await response.json();
   } catch (error) {
-    console.warn('Backend history fetch failed, reading localStorage:', error);
+    console.warn('Backend history fetch error:', error);
     const stored = localStorage.getItem(`history_${userId}`);
     return stored ? JSON.parse(stored) : [];
+  }
+}
+
+export async function fetchAssessmentById(assessmentId) {
+  const response = await fetch(`${API_BASE_URL}/api/assessments/${assessmentId}`);
+  if (!response.ok) throw new Error('Assessment not found');
+  return await response.json();
+}
+
+export async function deleteAssessmentById(assessmentId) {
+  const response = await fetch(`${API_BASE_URL}/api/assessments/${assessmentId}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) throw new Error('Failed to delete assessment');
+  return await response.json();
+}
+
+export async function deleteUserAssessments(userId) {
+  const response = await fetch(`${API_BASE_URL}/api/assessments/user/${userId}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) throw new Error('Failed to clear user assessments');
+  return await response.json();
+}
+
+export async function submitCoachFeedback(assessmentId, coachNotes) {
+  const response = await fetch(`${API_BASE_URL}/api/assessments/${assessmentId}/coach-feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ coach_notes: coachNotes })
+  });
+  if (!response.ok) throw new Error('Failed to save coach feedback');
+  return await response.json();
+}
+
+export async function fetchVerifiedOpportunities(sport = '') {
+  try {
+    const url = sport ? `${API_BASE_URL}/api/opportunities?sport=${encodeURIComponent(sport)}` : `${API_BASE_URL}/api/opportunities`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to fetch opportunities');
+    return await response.json();
+  } catch (error) {
+    console.warn('Opportunities fetch error:', error);
+    return [];
   }
 }
