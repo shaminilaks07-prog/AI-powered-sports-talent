@@ -8,7 +8,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 
 export default function DrillsScreen({ onSelectDrill }) {
@@ -88,94 +89,110 @@ export default function DrillsScreen({ onSelectDrill }) {
   ];
 
   return (
-    <div className="space-y-4 animate-fade-in pb-4 text-[#303831]">
-      <div>
-        <h2 className="text-lg font-black text-[#303831]">Sports & Exercise Drills</h2>
-        <p className="text-xs text-[#5A655C]">
-          Explore supported biomechanical assessments, camera guidelines, and safety criteria.
+    <div className="space-y-6 animate-fade-in text-[#303831] max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="pb-2 border-b border-[#E6D8CB]">
+        <h2 className="text-2xl font-black text-[#303831] tracking-tight">
+          Exercise Drills & Movement Protocols
+        </h2>
+        <p className="text-xs md:text-sm text-[#766660]">
+          Standardized movement assessments, camera positioning rules, and metric specifications.
         </p>
       </div>
 
-      {/* Drill Detail Modal (if one is clicked) */}
+      {/* Selected Drill Modal / Card */}
       {selectedDrill && (
-        <div className="p-4 rounded-2xl bg-white border border-[#46664F]/30 shadow-md space-y-3 animate-fade-in">
+        <div className="p-6 rounded-3xl bg-[#FFF9F2] border-2 border-[#722F46] shadow-md space-y-4 animate-fade-in">
           <div className="flex justify-between items-start">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{selectedDrill.icon}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">{selectedDrill.icon}</span>
               <div>
-                <h3 className="font-bold text-sm text-[#303831]">{selectedDrill.name}</h3>
-                <span className="badge-sage text-[9px]">{selectedDrill.category}</span>
+                <h3 className="font-extrabold text-base text-[#303831]">{selectedDrill.name}</h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#722F46]/10 text-[#722F46] border border-[#722F46]/20 uppercase">
+                  {selectedDrill.category}
+                </span>
               </div>
             </div>
             <button
               onClick={() => setSelectedDrill(null)}
-              className="text-xs text-[#5A655C] hover:text-[#303831] font-bold p-1"
+              className="text-xs text-[#766660] hover:text-[#303831] font-bold p-1 rounded-lg hover:bg-[#EFE4D8]"
             >
-              ✕ Close
+              ✕ Close Guide
             </button>
           </div>
 
-          <div className="space-y-2 text-xs text-[#5A655C]">
-            <div className="p-2.5 rounded-xl bg-[#F3F1E8]">
-              <span className="font-bold text-[#46664F] text-[11px] block uppercase mb-0.5">What is Evaluated:</span>
-              <p className="text-[11px] text-[#303831] leading-snug">{selectedDrill.whatAssessed}</p>
+          <div className="space-y-3 text-xs text-[#766660]">
+            <div className="p-3.5 rounded-xl bg-[#F7F0E7] border border-[#E6D8CB]">
+              <span className="font-bold text-[#722F46] text-xs block uppercase mb-1">
+                Biomechanical Evaluation Scope:
+              </span>
+              <p className="text-xs text-[#303831] leading-relaxed">{selectedDrill.whatAssessed}</p>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-white border border-[#E5E7E2]">
-              <span className="font-bold text-[#303831] text-[11px] block mb-0.5">📸 Camera Setup & Placement:</span>
-              <p className="text-[11px] leading-snug">{selectedDrill.cameraSetup}</p>
+            <div className="p-3.5 rounded-xl bg-[#FFF9F2] border border-[#E6D8CB]">
+              <span className="font-bold text-[#303831] text-xs block mb-1">
+                📸 Camera Placement & Calibration:
+              </span>
+              <p className="text-xs text-[#766660] leading-relaxed">{selectedDrill.cameraSetup}</p>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-white border border-[#E5E7E2]">
-              <span className="font-bold text-[#303831] text-[11px] block mb-0.5">🛡️ Safety & Execution:</span>
-              <p className="text-[11px] leading-snug">{selectedDrill.safetyGuide}</p>
+            <div className="p-3.5 rounded-xl bg-[#FFF9F2] border border-[#E6D8CB]">
+              <span className="font-bold text-[#303831] text-xs block mb-1">
+                🛡️ Athlete Safety Guidance:
+              </span>
+              <p className="text-xs text-[#766660] leading-relaxed">{selectedDrill.safetyGuide}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
-              <div className="p-2 rounded-lg bg-[#DCE8D8]/50 border border-[#46664F]/20">
-                <span className="font-bold text-[#46664F] block">✓ What it measures:</span>
-                <p className="text-[#303831] mt-0.5">{selectedDrill.canMeasure}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+              <div className="p-3 rounded-xl bg-[#278653]/10 border border-[#278653]/25">
+                <span className="font-bold text-[#278653] block">✓ What is Measured:</span>
+                <p className="text-[#303831] mt-1 text-[11px] leading-relaxed">{selectedDrill.canMeasure}</p>
               </div>
-              <div className="p-2 rounded-lg bg-[#F8F9F6] border border-[#E5E7E2]">
-                <span className="font-bold text-[#7C887E] block">✗ Transparent limits:</span>
-                <p className="text-[#5A655C] mt-0.5">{selectedDrill.cannotMeasure}</p>
+              <div className="p-3 rounded-xl bg-[#F7F0E7] border border-[#E6D8CB]">
+                <span className="font-bold text-[#766660] block">✗ Transparent Limits:</span>
+                <p className="text-[#766660] mt-1 text-[11px] leading-relaxed">{selectedDrill.cannotMeasure}</p>
               </div>
             </div>
           </div>
 
           <button
             onClick={() => onSelectDrill(selectedDrill.id)}
-            className="w-full btn-forest text-xs py-2.5 flex items-center justify-center gap-1.5"
+            className="w-full btn-wine text-xs py-3 flex items-center justify-center gap-2 shadow-sm"
           >
-            <Play size={13} fill="currentColor" /> Assess This Drill with AI
+            <Play size={14} fill="currentColor" />
+            <span>Assess This Exercise with Computer Vision</span>
           </button>
         </div>
       )}
 
-      {/* Drill Cards List */}
-      <div className="space-y-2">
+      {/* Drills List Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {drills.map((drill) => (
           <div
             key={drill.id}
             onClick={() => setSelectedDrill(drill)}
-            className="p-3.5 rounded-2xl bg-white hover:bg-[#F8F9F6] border border-[#E5E7E2] hover:border-[#8FB8AC] transition-all cursor-pointer shadow-xs flex items-center justify-between group"
+            className="p-5 rounded-2xl bg-[#FFF9F2] hover:bg-[#fff6ec] border border-[#E6D8CB] hover:border-[#722F46] transition-all cursor-pointer shadow-xs flex items-center justify-between group"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-[#F3F1E8] flex items-center justify-center text-2xl shrink-0 group-hover:bg-[#DCE8D8] transition-colors">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-12 h-12 rounded-2xl bg-[#EFE4D8] flex items-center justify-center text-2xl shrink-0 group-hover:bg-[#722F46]/15 transition-colors">
                 {drill.icon}
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-bold text-xs text-[#303831] group-hover:text-[#46664F] transition-colors">
+                  <h4 className="font-bold text-xs text-[#303831] group-hover:text-[#722F46] transition-colors truncate">
                     {drill.name}
                   </h4>
-                  <span className="badge-sage text-[8px] py-0.2 px-1.5">{drill.tag}</span>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#EFE4D8] text-[#4B2925] shrink-0">
+                    {drill.tag}
+                  </span>
                 </div>
-                <p className="text-[10px] text-[#5A655C] line-clamp-1 mt-0.5">{drill.whatAssessed}</p>
+                <p className="text-[11px] text-[#766660] line-clamp-1 mt-1 leading-snug">
+                  {drill.whatAssessed}
+                </p>
               </div>
             </div>
 
-            <ChevronRight size={15} className="text-[#7C887E] group-hover:text-[#46664F] shrink-0" />
+            <ChevronRight size={17} className="text-[#805044] group-hover:text-[#722F46] shrink-0 ml-2" />
           </div>
         ))}
       </div>

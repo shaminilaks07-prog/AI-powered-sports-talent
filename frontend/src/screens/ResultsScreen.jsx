@@ -13,7 +13,10 @@ import {
   Activity,
   Send,
   ShieldCheck,
-  Info
+  Info,
+  ChevronRight,
+  ShieldAlert,
+  HelpCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { submitCoachFeedback } from '../services/api';
@@ -23,11 +26,17 @@ export default function ResultsScreen({ result, onRetake, onGoToHistory, onBackT
   const [savingNote, setSavingNote] = useState(false);
   const [noteSuccess, setNoteSuccess] = useState(false);
 
+  const isLowConfidence =
+    !result ||
+    result.detection_confidence < 60 ||
+    result.assessment_status === 'Detection Warning - Reposition Camera';
+
   useEffect(() => {
     try {
-      if (result && result.overall_score >= 70) {
+      // Only celebrate if confidence is high and score is solid
+      if (result && !isLowConfidence && result.overall_score >= 70) {
         confetti({
-          particleCount: 40,
+          particleCount: 45,
           spread: 60,
           origin: { y: 0.6 }
         });
@@ -35,26 +44,29 @@ export default function ResultsScreen({ result, onRetake, onGoToHistory, onBackT
     } catch (e) {
       // ignore
     }
-  }, [result]);
+  }, [result, isLowConfidence]);
 
   if (!result) {
     return (
-      <div className="text-center py-12 space-y-3">
-        <p className="text-[#5A655C] text-xs">No assessment report to display.</p>
-        <button onClick={onRetake} className="btn-forest text-xs py-2 px-4">
-          Start Assessment
+      <div className="text-center py-16 space-y-4 max-w-md mx-auto">
+        <div className="w-12 h-12 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] flex items-center justify-center mx-auto text-[#766660]">
+          <Info size={22} />
+        </div>
+        <p className="text-[#766660] text-xs">No active biomechanical assessment report to display.</p>
+        <button onClick={onRetake} className="btn-wine text-xs py-2.5 px-5">
+          Start Video Assessment
         </button>
       </div>
     );
   }
 
-  const score = result.overall_score || 75;
+  const score = result.overall_score || 0;
 
   const getScoreTier = (sc) => {
-    if (sc >= 90) return { label: 'Elite Grassroots Tier', bg: 'bg-[#DCE8D8]', text: 'text-[#46664F]', border: 'border-[#46664F]/30' };
-    if (sc >= 80) return { label: 'High Potential / Advanced', bg: 'bg-[#8FB8AC]/25', text: 'text-[#2E554C]', border: 'border-[#8FB8AC]/40' };
-    if (sc >= 70) return { label: 'Intermediate Prospect', bg: 'bg-[#F3F1E8]', text: 'text-[#303831]', border: 'border-[#E5E7E2]' };
-    return { label: 'Developmental Athlete', bg: 'bg-[#C85A48]/15', text: 'text-[#C85A48]', border: 'border-[#C85A48]/30' };
+    if (sc >= 90) return { label: 'Elite Grassroots Tier', bg: 'bg-[#278653]/15', text: 'text-[#278653]', border: 'border-[#278653]/30' };
+    if (sc >= 80) return { label: 'High Potential / Advanced', bg: 'bg-[#722F46]/15', text: 'text-[#722F46]', border: 'border-[#722F46]/30' };
+    if (sc >= 70) return { label: 'Intermediate Prospect', bg: 'bg-[#805044]/15', text: 'text-[#805044]', border: 'border-[#805044]/30' };
+    return { label: 'Developmental Athlete', bg: 'bg-[#C47A32]/15', text: 'text-[#C47A32]', border: 'border-[#C47A32]/30' };
   };
 
   const tier = getScoreTier(score);
@@ -77,217 +89,293 @@ export default function ResultsScreen({ result, onRetake, onGoToHistory, onBackT
   const videoUrl = result.video_filename ? `http://127.0.0.1:8000/uploads/${result.video_filename}` : null;
 
   return (
-    <div className="space-y-4 animate-fade-in pb-4 text-[#303831]">
-      {/* Top Report Header Card */}
-      <div className="relative overflow-hidden rounded-3xl bg-white p-5 border border-[#E5E7E2] text-center shadow-sm">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-[#DCE8D8] text-[#46664F] border border-[#46664F]/20">
-          <Sparkles size={12} /> {result.sport} Assessment
-        </div>
-
-        {/* Repetition and Duration Tag */}
-        <div className="flex justify-center items-center gap-3 text-xs text-[#5A655C] mb-2 font-medium">
-          {result.reps_count > 0 && (
-            <span className="flex items-center gap-1 font-bold text-[#46664F]">
-              <Activity size={13} /> {result.reps_count} Repetitions Completed
-            </span>
-          )}
-          {result.duration_sec > 0 && (
-            <span className="flex items-center gap-1">
-              <Clock size={13} /> {result.duration_sec}s Duration
-            </span>
-          )}
-          {result.cadence_rpm > 0 && (
-            <span className="flex items-center gap-1">
-              • {result.cadence_rpm} reps/min
-            </span>
-          )}
-        </div>
-
-        {/* Circular Score Gauge */}
-        <div className="relative w-32 h-32 mx-auto my-2 flex items-center justify-center">
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-            <path
-              className="text-[#E5E7E2]"
-              strokeWidth="3.2"
-              stroke="currentColor"
-              fill="none"
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-            <path
-              className="text-[#46664F]"
-              strokeDasharray={`${score}, 100`}
-              strokeWidth="3.2"
-              strokeLinecap="round"
-              stroke="currentColor"
-              fill="none"
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-          </svg>
-          <div className="absolute flex flex-col items-center justify-center">
-            <span className="text-3xl font-black text-[#303831] tracking-tight">{score}</span>
-            <span className="text-[9px] text-[#5A655C] font-bold uppercase tracking-widest">/ 100 PTS</span>
-          </div>
-        </div>
-
-        <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${tier.bg} ${tier.text} ${tier.border}`}>
-          {tier.label}
-        </div>
-
-        {/* Quality / Confidence Indicator */}
-        <div className="mt-3 flex justify-center items-center gap-1.5 text-[10px] text-[#5A655C]">
-          <ShieldCheck size={12} className="text-[#3E8A5E]" />
-          <span>Computer Vision Confidence: {result.detection_confidence || 88}%</span>
-        </div>
-      </div>
-
-      {/* Video Playback Section (if available) */}
-      {videoUrl && (
-        <div className="p-3 rounded-2xl bg-white border border-[#E5E7E2] space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-[#303831]">
-            <Video size={14} className="text-[#46664F]" /> Evaluated Video Recording
-          </div>
-          <div className="relative rounded-xl overflow-hidden bg-black max-h-48 flex items-center justify-center">
-            <video
-              src={videoUrl}
-              controls
-              playsInline
-              className="w-full max-h-48 object-contain"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Detection Confidence Warning (if poor positioning) */}
-      {result.detection_confidence < 60 && (
-        <div className="p-3 rounded-xl bg-[#C85A48]/10 border border-[#C85A48]/25 text-[#C85A48] text-xs space-y-1">
-          <div className="font-bold flex items-center gap-1.5">
-            <AlertTriangle size={14} /> Sub-optimal Camera Angle Warning
-          </div>
-          <p className="text-[11px] leading-snug">
-            MediaPipe detected lower tracking visibility. For higher precision, position camera 2.5–3m away with full body visible in even daylight.
+    <div className="space-y-6 animate-fade-in text-[#303831] max-w-4xl mx-auto">
+      {/* Header Breadcrumbs */}
+      <div className="flex items-center justify-between pb-2 border-b border-[#E6D8CB]">
+        <div>
+          <h2 className="text-2xl font-black text-[#303831] tracking-tight">
+            Biomechanics & Talent Report
+          </h2>
+          <p className="text-xs text-[#766660]">
+            Detailed joint kinematics, repetition analysis, and technical evaluation.
           </p>
         </div>
-      )}
 
-      {/* Biomechanical Breakdown */}
-      <div className="p-4 rounded-2xl bg-white border border-[#E5E7E2] space-y-3">
-        <h3 className="text-xs font-bold text-[#5A655C] uppercase tracking-wider flex items-center gap-1.5">
-          <Award size={14} className="text-[#46664F]" /> Biomechanical Measurements
-        </h3>
+        <button
+          onClick={onBackToHome}
+          className="btn-outline text-xs py-2 px-3.5 flex items-center gap-1.5"
+        >
+          <ArrowLeft size={14} /> Back to Dashboard
+        </button>
+      </div>
 
-        <div className="space-y-3">
-          {result.metrics?.map((m, idx) => (
-            <div key={idx} className="space-y-1">
-              <div className="flex justify-between text-xs font-medium">
-                <span className="text-[#303831] font-semibold">{m.name}</span>
-                <span className="text-[#46664F] font-mono font-bold">
-                  {m.score} {m.unit}
-                </span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-[#E5E7E2] overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[#46664F] transition-all duration-500"
-                  style={{ width: `${Math.min(100, Math.max(10, m.score))}%` }}
-                ></div>
-              </div>
-              <p className="text-[11px] text-[#5A655C] leading-tight pt-0.5">{m.feedback}</p>
+      {/* INSUFFICIENT CONFIDENCE / BODY VISIBILITY CHECK */}
+      {isLowConfidence ? (
+        <div className="p-6 md:p-8 rounded-3xl bg-[#FFF9F2] border-2 border-[#C47A32] shadow-sm space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#C47A32]/15 text-[#C47A32] flex items-center justify-center shrink-0">
+              <ShieldAlert size={26} />
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Key Strengths */}
-      <div className="p-4 rounded-2xl bg-white border border-[#E5E7E2] border-l-4 border-l-[#3E8A5E]">
-        <h3 className="text-xs font-bold text-[#3E8A5E] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <CheckCircle2 size={14} /> Key Technical Strengths
-        </h3>
-        <ul className="space-y-1.5">
-          {result.strengths?.map((str, idx) => (
-            <li key={idx} className="text-xs text-[#303831] flex items-start gap-2">
-              <span className="text-[#3E8A5E] font-bold">✓</span>
-              <span>{str}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Areas for Improvement */}
-      <div className="p-4 rounded-2xl bg-white border border-[#E5E7E2] border-l-4 border-l-[#D9822B]">
-        <h3 className="text-xs font-bold text-[#D9822B] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <AlertTriangle size={14} /> Areas for Refinement
-        </h3>
-        <ul className="space-y-1.5">
-          {result.weaknesses?.map((wk, idx) => (
-            <li key={idx} className="text-xs text-[#303831] flex items-start gap-2">
-              <span className="text-[#D9822B] font-bold">•</span>
-              <span>{wk}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* AI Coach Action Plan */}
-      <div className="p-4 rounded-2xl bg-[#F3F1E8] border border-[#E5E7E2] space-y-2">
-        <h3 className="text-xs font-bold text-[#46664F] uppercase tracking-wider flex items-center gap-1.5">
-          <Lightbulb size={14} /> AI Coach Training Drills
-        </h3>
-        <ul className="space-y-2 pt-1">
-          {result.suggestions?.map((sug, idx) => (
-            <li key={idx} className="text-xs text-[#303831] flex items-start gap-2 bg-white p-2.5 rounded-xl border border-[#E5E7E2]">
-              <span className="w-5 h-5 rounded-full bg-[#DCE8D8] text-[#46664F] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                {idx + 1}
-              </span>
-              <span>{sug}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Coach Notes & Review Foundation */}
-      <div className="p-4 rounded-2xl bg-white border border-[#E5E7E2] space-y-2">
-        <h3 className="text-xs font-bold text-[#303831] flex items-center gap-1.5">
-          <span>👨‍🏫 Coach Feedback & Trial Notes</span>
-        </h3>
-        {result.coach_notes ? (
-          <div className="p-2.5 rounded-xl bg-[#F3F1E8] text-xs text-[#303831] font-medium border border-[#E5E7E2]">
-            <p className="text-[10px] text-[#5A655C] font-bold uppercase mb-0.5">Recorded Coach Note:</p>
-            "{result.coach_notes}"
+            <div>
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-[#C47A32]/15 text-[#C47A32] text-[10px] font-bold uppercase tracking-wider mb-1">
+                Validation Warning
+              </div>
+              <h3 className="text-lg font-black text-[#303831]">
+                Talent Score Withheld – Insufficient Pose Landmark Visibility
+              </h3>
+              <p className="text-xs text-[#766660] mt-1 leading-relaxed">
+                The MediaPipe computer vision model detected lower landmark tracking confidence ({result.detection_confidence || 35}%). Key skeletal joints (shoulders, hips, or knees) were either partially out of frame, obscured, or recorded under inadequate lighting.
+              </p>
+            </div>
           </div>
-        ) : (
-          <form onSubmit={handleSaveCoachNote} className="space-y-2">
-            <textarea
-              value={coachNote}
-              onChange={(e) => setCoachNote(e.target.value)}
-              placeholder="Coach or trial evaluator: add technical observation notes..."
-              rows={2}
-              className="sport-input text-xs"
-            />
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] text-[#5A655C]">Controlled by athlete privacy settings</span>
-              <button
-                type="submit"
-                disabled={savingNote || !coachNote.trim()}
-                className="btn-forest text-xs py-1.5 px-3 flex items-center gap-1"
-              >
-                <Send size={12} /> {savingNote ? 'Saving...' : 'Save Coach Note'}
-              </button>
-            </div>
-            {noteSuccess && (
-              <p className="text-[10px] text-[#3E8A5E] font-bold">Coach feedback saved successfully!</p>
-            )}
-          </form>
-        )}
-      </div>
 
-      {/* Navigation Actions */}
-      <div className="grid grid-cols-2 gap-2 pt-2">
-        <button onClick={onRetake} className="btn-outline text-xs py-3 flex items-center justify-center gap-1.5">
-          <RefreshCw size={14} /> Retake Test
-        </button>
-        <button onClick={onGoToHistory} className="btn-forest text-xs py-3 flex items-center justify-center gap-1.5">
-          View History & Progress
-        </button>
-      </div>
+          <div className="p-4 rounded-2xl bg-[#F7F0E7] border border-[#E6D8CB] space-y-2 text-xs">
+            <span className="font-bold text-[#303831] block">
+              Why wasn't a talent score assigned?
+            </span>
+            <p className="text-[#766660] leading-relaxed text-[11px]">
+              To maintain scientific integrity and prevent biased or false evaluations for grassroots athletes, TalentPulse AI does not estimate a talent score when limb visibility is compromised.
+            </p>
+            <div className="pt-2 border-t border-[#E6D8CB] space-y-1 text-[11px] text-[#303831]">
+              <p className="font-semibold text-[#4B2925]">How to record a valid video:</p>
+              <ul className="list-disc list-inside space-y-1 text-[#766660]">
+                <li>Position phone or webcam on a steady surface at waist/mat level, 2.5–3m away.</li>
+                <li>Ensure full body from head to feet remains visible during the full range of motion.</li>
+                <li>Record in bright, even daylight or well-lit indoor area (avoid backlighting).</li>
+                <li>Wear clothing that contrasts with your flooring or background.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              onClick={onRetake}
+              className="btn-wine text-xs py-3 px-6 flex items-center justify-center gap-2"
+            >
+              <RefreshCw size={14} /> Upload a Better Video
+            </button>
+            <button
+              onClick={onBackToHome}
+              className="btn-outline text-xs py-3 px-5 flex items-center justify-center gap-1.5"
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* SUFFICIENT CONFIDENCE - OFFICIAL REPORT */
+        <>
+          {/* Main Score & Athlete Tier Card */}
+          <div className="relative overflow-hidden rounded-3xl bg-[#FFF9F2] p-6 md:p-8 border border-[#E6D8CB] text-center shadow-xs space-y-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#722F46]/10 text-[#722F46] border border-[#722F46]/20">
+              <Sparkles size={13} /> {result.sport} Assessment
+            </div>
+
+            {/* Repetitions, Duration & Cadence */}
+            <div className="flex flex-wrap justify-center items-center gap-4 text-xs text-[#766660] font-medium">
+              {result.reps_count > 0 && (
+                <span className="flex items-center gap-1.5 font-bold text-[#722F46]">
+                  <Activity size={15} /> {result.reps_count} Repetitions Completed
+                </span>
+              )}
+              {result.duration_sec > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <Clock size={15} /> {result.duration_sec}s Duration
+                </span>
+              )}
+              {result.cadence_rpm > 0 && (
+                <span className="flex items-center gap-1.5">
+                  • {result.cadence_rpm} reps/min cadence
+                </span>
+              )}
+            </div>
+
+            {/* Circular Biomechanics Score Gauge */}
+            <div className="relative w-36 h-36 mx-auto my-2 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  className="text-[#E6D8CB]"
+                  strokeWidth="3.2"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path
+                  className="text-[#722F46]"
+                  strokeDasharray={`${score}, 100`}
+                  strokeWidth="3.2"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center justify-center">
+                <span className="text-3xl font-black text-[#303831] tracking-tight">{score}</span>
+                <span className="text-[9px] text-[#766660] font-bold uppercase tracking-widest">/ 100 PTS</span>
+              </div>
+            </div>
+
+            <div className={`inline-block px-3.5 py-1 rounded-full text-xs font-bold border ${tier.bg} ${tier.text} ${tier.border}`}>
+              {tier.label}
+            </div>
+
+            {/* Confidence Stamp */}
+            <div className="flex justify-center items-center gap-1.5 text-[11px] text-[#766660] pt-1">
+              <ShieldCheck size={14} className="text-[#278653]" />
+              <span>Computer Vision Tracking Confidence: {result.detection_confidence || 88}%</span>
+            </div>
+          </div>
+
+          {/* Evaluated Video Clip */}
+          {videoUrl && (
+            <div className="p-5 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#303831]">
+                <Video size={16} className="text-[#722F46]" /> Evaluated Video Recording
+              </div>
+              <div className="rounded-xl overflow-hidden bg-black max-h-60 flex items-center justify-center">
+                <video
+                  src={videoUrl}
+                  controls
+                  playsInline
+                  className="w-full max-h-60 object-contain"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Biomechanical Measurements Breakdown */}
+          <div className="p-6 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] shadow-xs space-y-4">
+            <h3 className="text-xs font-bold text-[#766660] uppercase tracking-wider flex items-center gap-2">
+              <Award size={16} className="text-[#722F46]" /> Biomechanical Measurement Breakdown
+            </h3>
+
+            <div className="space-y-4">
+              {result.metrics?.map((m, idx) => (
+                <div key={idx} className="space-y-1.5 p-3 rounded-xl bg-[#F7F0E7] border border-[#E6D8CB]">
+                  <div className="flex justify-between items-baseline text-xs font-bold">
+                    <span className="text-[#303831]">{m.name}</span>
+                    <span className="text-[#722F46] font-mono font-black text-sm">
+                      {m.score} {m.unit}
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-[#E6D8CB] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#722F46] transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.max(10, m.score))}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-[#766660] leading-relaxed pt-0.5">{m.feedback}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Key Strengths & Areas for Refinement */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-5 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] border-l-4 border-l-[#278653] shadow-xs space-y-2">
+              <h3 className="text-xs font-bold text-[#278653] uppercase tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 size={15} /> Key Technical Strengths
+              </h3>
+              <ul className="space-y-2 pt-1">
+                {result.strengths?.map((str, idx) => (
+                  <li key={idx} className="text-xs text-[#303831] flex items-start gap-2">
+                    <span className="text-[#278653] font-bold">✓</span>
+                    <span>{str}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] border-l-4 border-l-[#C47A32] shadow-xs space-y-2">
+              <h3 className="text-xs font-bold text-[#C47A32] uppercase tracking-wider flex items-center gap-1.5">
+                <AlertTriangle size={15} /> Areas for Refinement
+              </h3>
+              <ul className="space-y-2 pt-1">
+                {result.weaknesses?.map((wk, idx) => (
+                  <li key={idx} className="text-xs text-[#303831] flex items-start gap-2">
+                    <span className="text-[#C47A32] font-bold">•</span>
+                    <span>{wk}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* AI Coach Action Plan */}
+          <div className="p-6 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] shadow-xs space-y-3">
+            <h3 className="text-xs font-bold text-[#4B2925] uppercase tracking-wider flex items-center gap-2">
+              <Lightbulb size={16} className="text-[#722F46]" /> AI Coach Training Drills
+            </h3>
+            <ul className="space-y-2 pt-1">
+              {result.suggestions?.map((sug, idx) => (
+                <li
+                  key={idx}
+                  className="text-xs text-[#303831] flex items-start gap-2.5 bg-[#F7F0E7] p-3 rounded-xl border border-[#E6D8CB]"
+                >
+                  <span className="w-5 h-5 rounded-full bg-[#722F46] text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                    {idx + 1}
+                  </span>
+                  <span className="leading-relaxed">{sug}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Coach Notes & Review */}
+          <div className="p-6 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] shadow-xs space-y-3">
+            <h3 className="text-xs font-bold text-[#303831] flex items-center gap-2">
+              <span>👨‍🏫 Coach Feedback & Trial Notes</span>
+            </h3>
+
+            {result.coach_notes ? (
+              <div className="p-3.5 rounded-xl bg-[#F7F0E7] text-xs text-[#303831] border border-[#E6D8CB]">
+                <p className="text-[10px] text-[#766660] font-bold uppercase mb-1">Recorded Coach Observation:</p>
+                <p className="italic">"{result.coach_notes}"</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveCoachNote} className="space-y-2.5">
+                <textarea
+                  value={coachNote}
+                  onChange={(e) => setCoachNote(e.target.value)}
+                  placeholder="Coach or trial evaluator: add biomechanical feedback notes..."
+                  rows={2}
+                  className="sport-input text-xs"
+                />
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <span className="text-[10px] text-[#766660]">Controlled by athlete privacy permissions</span>
+                  <button
+                    type="submit"
+                    disabled={savingNote || !coachNote.trim()}
+                    className="btn-wine text-xs py-2 px-4 flex items-center gap-1.5"
+                  >
+                    <Send size={13} /> {savingNote ? 'Saving...' : 'Save Coach Feedback'}
+                  </button>
+                </div>
+                {noteSuccess && (
+                  <p className="text-[11px] text-[#278653] font-bold">Coach feedback saved successfully!</p>
+                )}
+              </form>
+            )}
+          </div>
+
+          {/* Bottom Actions */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <button
+              onClick={onRetake}
+              className="btn-outline text-xs py-3 flex items-center justify-center gap-2"
+            >
+              <RefreshCw size={15} /> Retake Assessment
+            </button>
+            <button
+              onClick={onGoToHistory}
+              className="btn-wine text-xs py-3 flex items-center justify-center gap-2"
+            >
+              View Assessment History
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

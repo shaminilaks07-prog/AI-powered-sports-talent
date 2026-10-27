@@ -10,7 +10,8 @@ import {
   RefreshCw,
   Info,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Zap
 } from 'lucide-react';
 import { uploadAndAnalyzeVideo } from '../services/api';
 import WebcamRecorder from '../components/WebcamRecorder';
@@ -30,7 +31,7 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
       id: 'Sit-ups and Core Endurance',
       name: 'Sit-ups & Core',
       icon: '🧘',
-      cameraSetup: 'Side angle at mat level, 2.5m away. Capture full torso and bent knees.',
+      cameraSetup: 'Side angle at mat level, 2.5m away. Capture full torso, hips, and knees.',
       whatMeasured: 'Counts repetitions via hip flexion angle, measures cadence (reps/min) and torso curl range.'
     },
     {
@@ -44,7 +45,7 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
       id: 'Jumping Exercises',
       name: 'Jumping / Explosive',
       icon: '⚡',
-      cameraSetup: 'Direct front or side view, 3m away. Full vertical clearance above head.',
+      cameraSetup: 'Direct front or side view, 3m away. Ensure full vertical clearance above head.',
       whatMeasured: 'Tracks countermovement dip loading, explosive vertical takeoff speed, and landing absorption.'
     },
     {
@@ -77,7 +78,7 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
     const hasValidExt = validExts.some((ext) => file.name.toLowerCase().endsWith(ext));
 
     if (!file.type.startsWith('video/') && !hasValidExt) {
-      setErrorMsg('Please select a valid sports video file (.mp4, .mov, .webm, .avi, .mkv).');
+      setErrorMsg('Please select a valid sports video file (.mp4, .mov, .webm, .avi, .mkv, .m4v).');
       return;
     }
     if (file.size > 60 * 1024 * 1024) {
@@ -122,7 +123,7 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
 
     setSelectedSport(sportCategory);
 
-    // Create realistic synthetic video blob for local verification
+    // Create realistic synthetic video blob for local testing
     const blob = new Blob([new Uint8Array(1024 * 50)], { type: 'video/mp4' });
     const mockFile = new File([blob], sampleFilename, { type: 'video/mp4' });
     setVideoFile(mockFile);
@@ -157,7 +158,7 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
 
       const res = await uploadAndAnalyzeVideo(formData);
       if (res.success && res.data) {
-        // Persist to local storage for instant offline viewing as well
+        // Persist to local storage
         const key = `history_${user?.id || 1}`;
         const existing = JSON.parse(localStorage.getItem(key) || '[]');
         localStorage.setItem(key, JSON.stringify([res.data, ...existing]));
@@ -173,21 +174,23 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
   };
 
   return (
-    <div className="space-y-4 animate-fade-in pb-4">
+    <div className="space-y-6 animate-fade-in text-[#303831] max-w-4xl mx-auto">
       {/* Title */}
-      <div>
-        <h2 className="text-lg font-black text-[#303831]">Physical Assessment Input</h2>
-        <p className="text-xs text-[#5A655C]">
-          Record with live webcam or upload a 5–25s performance video clip.
+      <div className="pb-2 border-b border-[#E6D8CB]">
+        <h2 className="text-2xl font-black text-[#303831] tracking-tight">
+          Physical Video Assessment
+        </h2>
+        <p className="text-xs md:text-sm text-[#766660]">
+          Record live with your webcam or upload a 5–30s video clip for automated joint angle analysis.
         </p>
       </div>
 
       {/* Sport Selector */}
-      <div>
-        <label className="block text-[11px] font-bold text-[#5A655C] uppercase tracking-wider mb-1.5">
+      <div className="p-6 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] shadow-xs space-y-3">
+        <label className="block text-xs font-bold text-[#766660] uppercase tracking-wider">
           1. Select Exercise Drill
         </label>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
           {sports.map((sp) => {
             const isSelected = selectedSport === sp.id;
             return (
@@ -195,15 +198,15 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
                 key={sp.id}
                 type="button"
                 onClick={() => setSelectedSport(sp.id)}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
+                className={`p-3 rounded-xl border text-left transition-all ${
                   isSelected
-                    ? 'bg-[#DCE8D8] border-[#46664F] text-[#303831] shadow-xs'
-                    : 'bg-white border-[#E5E7E2] text-[#5A655C] hover:bg-[#F3F1E8]'
+                    ? 'bg-[#722F46] border-[#722F46] text-white shadow-xs font-bold'
+                    : 'bg-[#F7F0E7] border-[#E6D8CB] text-[#303831] hover:bg-[#EFE4D8]'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{sp.icon}</span>
-                  <span className="text-xs font-bold leading-tight truncate">{sp.name}</span>
+                  <span className="text-xl">{sp.icon}</span>
+                  <span className="text-xs font-bold truncate">{sp.name}</span>
                 </div>
               </button>
             );
@@ -212,45 +215,46 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
       </div>
 
       {/* Camera Guidance Box */}
-      <div className="p-3 rounded-xl bg-[#F3F1E8] border border-[#E5E7E2] text-xs space-y-1">
-        <div className="flex items-center gap-1.5 text-[#46664F] font-bold text-[11px] uppercase tracking-wide">
-          <Info size={14} /> Camera Positioning Instructions
+      <div className="p-4 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] space-y-1.5 shadow-xs">
+        <div className="flex items-center gap-2 text-[#722F46] font-bold text-xs uppercase tracking-wide">
+          <Info size={16} /> Camera Setup Instructions for {currentSportInfo.name}
         </div>
-        <p className="text-[11px] text-[#303831] font-medium leading-snug">
+        <p className="text-xs text-[#303831] font-semibold leading-relaxed">
           {currentSportInfo.cameraSetup}
         </p>
-        <p className="text-[10px] text-[#5A655C] leading-tight">
+        <p className="text-[11px] text-[#766660]">
           What is assessed: {currentSportInfo.whatMeasured}
         </p>
       </div>
 
-      {/* Input Mode Toggle: Live Camera vs File Upload */}
-      <div>
-        <label className="block text-[11px] font-bold text-[#5A655C] uppercase tracking-wider mb-1.5">
+      {/* Input Mode Switcher */}
+      <div className="p-6 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] shadow-xs space-y-4">
+        <label className="block text-xs font-bold text-[#766660] uppercase tracking-wider">
           2. Choose Video Input Method
         </label>
-        <div className="flex bg-[#F3F1E8] p-1 rounded-xl border border-[#E5E7E2] mb-2.5">
+
+        <div className="flex bg-[#F7F0E7] p-1.5 rounded-xl border border-[#E6D8CB] max-w-md">
           <button
             type="button"
             onClick={() => setInputMode('upload')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
               inputMode === 'upload'
-                ? 'bg-[#46664F] text-white shadow-xs'
-                : 'text-[#5A655C] hover:text-[#303831]'
+                ? 'bg-[#722F46] text-white shadow-xs'
+                : 'text-[#766660] hover:text-[#303831]'
             }`}
           >
-            <Upload size={14} /> Upload Video File
+            <Upload size={15} /> Upload Video File
           </button>
           <button
             type="button"
             onClick={() => setInputMode('camera')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
               inputMode === 'camera'
-                ? 'bg-[#46664F] text-white shadow-xs'
-                : 'text-[#5A655C] hover:text-[#303831]'
+                ? 'bg-[#722F46] text-white shadow-xs'
+                : 'text-[#766660] hover:text-[#303831]'
             }`}
           >
-            <Camera size={14} /> Live Webcam Recorder
+            <Camera size={15} /> Live Webcam Recorder
           </button>
         </div>
 
@@ -268,57 +272,63 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
             <input
               ref={fileInputRef}
               type="file"
-              accept="video/*"
+              accept="video/*,.mp4,.mov,.webm,.avi,.mkv,.m4v"
               onChange={handleFileChange}
               className="hidden"
             />
 
             <div
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
+              className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
                 videoFile
-                  ? 'border-[#46664F] bg-[#DCE8D8]/20'
-                  : 'border-[#E5E7E2] bg-white hover:bg-[#F3F1E8] hover:border-[#8FB8AC]'
+                  ? 'border-[#278653] bg-[#278653]/5'
+                  : 'border-[#E6D8CB] bg-[#F7F0E7] hover:bg-[#EFE4D8] hover:border-[#805044]'
               }`}
             >
               {previewUrl ? (
-                <div className="space-y-2">
+                <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
                   <video
                     src={previewUrl}
                     controls
                     playsInline
-                    className="w-full max-h-44 rounded-xl object-contain bg-black"
+                    className="w-full max-h-56 rounded-xl object-contain bg-black mx-auto shadow-inner"
                   />
-                  <p className="text-xs text-[#46664F] font-bold truncate flex items-center justify-center gap-1">
-                    <CheckCircle2 size={14} className="text-[#3E8A5E]" />
-                    {videoFile?.name}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                    className="text-[11px] text-[#5A655C] hover:text-[#303831] underline"
-                  >
-                    Choose a different video
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+                    <span className="font-bold text-[#303831] flex items-center gap-1.5">
+                      <CheckCircle2 size={16} className="text-[#278653]" />
+                      {videoFile?.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      className="text-xs text-[#722F46] hover:underline font-bold"
+                    >
+                      Choose a different video
+                    </button>
+                  </div>
                 </div>
               ) : videoFile ? (
-                <div className="py-2.5">
-                  <div className="w-10 h-10 rounded-full bg-[#DCE8D8] text-[#46664F] flex items-center justify-center mx-auto mb-1.5">
-                    <Video size={20} />
+                <div className="py-4 space-y-1">
+                  <div className="w-12 h-12 rounded-2xl bg-[#EFE4D8] text-[#722F46] flex items-center justify-center mx-auto mb-2">
+                    <Video size={22} />
                   </div>
-                  <p className="text-xs text-[#303831] font-bold">{videoFile.name}</p>
-                  <p className="text-[11px] text-[#3E8A5E] mt-0.5">Ready for computer vision analysis</p>
+                  <p className="text-sm font-bold text-[#303831]">{videoFile.name}</p>
+                  <p className="text-xs text-[#278653] font-medium">Ready for MediaPipe kinematic analysis</p>
                 </div>
               ) : (
-                <div className="py-4">
-                  <div className="w-11 h-11 rounded-full bg-[#F3F1E8] text-[#46664F] flex items-center justify-center mx-auto mb-1.5">
-                    <Upload size={20} />
+                <div className="py-6 space-y-2">
+                  <div className="w-12 h-12 rounded-2xl bg-[#EFE4D8] text-[#722F46] flex items-center justify-center mx-auto mb-2">
+                    <Upload size={22} />
                   </div>
-                  <p className="text-xs font-bold text-[#303831]">Tap to select video file</p>
-                  <p className="text-[10px] text-[#5A655C] mt-0.5">Supports MP4, MOV, WebM, AVI (5–30 sec)</p>
+                  <p className="text-sm font-bold text-[#303831]">
+                    Click or drag video file here
+                  </p>
+                  <p className="text-xs text-[#766660]">
+                    Supports MP4, MOV, WebM, AVI, MKV (5–30 sec • Max 60MB)
+                  </p>
                 </div>
               )}
             </div>
@@ -326,18 +336,18 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
         )}
       </div>
 
-      {/* Fast Demo Samples for Desktop Review */}
-      <div className="p-3 rounded-xl bg-white border border-[#E5E7E2]">
-        <p className="text-[11px] font-bold text-[#5A655C] mb-1.5 flex items-center gap-1">
-          <Sparkles size={12} className="text-[#46664F]" /> Or select benchmark test sample:
+      {/* Fast Benchmark Testing Samples */}
+      <div className="p-4 rounded-2xl bg-[#FFF9F2] border border-[#E6D8CB] shadow-xs">
+        <p className="text-xs font-bold text-[#766660] mb-2 flex items-center gap-1.5">
+          <Sparkles size={14} className="text-[#722F46]" /> Fast Benchmark Testing Samples:
         </p>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {['Sit-up Benchmark', 'Deep Squat Form', 'Vertical Jump', 'Sprint Acceleration'].map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => handleSelectSample(s)}
-              className="text-[11px] px-2.5 py-1 rounded-lg bg-[#F3F1E8] hover:bg-[#DCE8D8] text-[#303831] border border-[#E5E7E2] transition-colors"
+              className="text-xs px-3 py-1.5 rounded-xl bg-[#F7F0E7] hover:bg-[#EFE4D8] text-[#303831] border border-[#E6D8CB] font-semibold transition-colors"
             >
               + {s}
             </button>
@@ -346,29 +356,29 @@ export default function UploadScreen({ user, initialSport, onAssessmentCompleted
       </div>
 
       {errorMsg && (
-        <div className="p-3 rounded-xl bg-[#C85A48]/10 border border-[#C85A48]/25 text-[#C85A48] text-xs font-medium flex items-center gap-2">
-          <AlertCircle size={15} className="shrink-0" />
+        <div className="p-4 rounded-2xl bg-[#C47A32]/10 border border-[#C47A32]/25 text-[#C47A32] text-xs font-semibold flex items-center gap-2">
+          <AlertCircle size={16} className="shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Analysis CTA Button */}
+      {/* Main Analysis CTA */}
       <button
         onClick={handleStartAnalysis}
         disabled={analyzing}
-        className="w-full btn-forest py-3.5 mt-1"
+        className="w-full btn-wine py-4 shadow-md text-sm"
       >
         {analyzing ? (
           <div className="flex flex-col items-center gap-1 py-0.5">
             <div className="flex items-center gap-2">
-              <RefreshCw size={15} className="animate-spin text-white" />
-              <span className="font-bold text-xs">Processing Computer Vision...</span>
+              <RefreshCw size={16} className="animate-spin text-white" />
+              <span className="font-bold text-sm">Processing Movement Mechanics...</span>
             </div>
-            <span className="text-[10px] font-normal text-white/90">{analyzingStep}</span>
+            <span className="text-xs font-normal text-white/90">{analyzingStep}</span>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-2">
-            <Sparkles size={16} />
+          <div className="flex items-center justify-center gap-2 font-bold">
+            <Sparkles size={18} />
             <span>Run Computer Vision Biomechanics Assessment</span>
           </div>
         )}

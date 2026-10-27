@@ -49,7 +49,7 @@ export default function WebcamRecorder({ onRecordingComplete, onCancel }) {
       } catch (err) {
         console.error('Camera access error:', err);
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          setCameraError('Camera permission was denied. Please allow camera access in your browser settings or use video upload.');
+          setCameraError('Camera permission was denied. Please allow camera access in your browser settings or use video file upload.');
         } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
           setCameraError('No camera found on this device. Please connect a webcam or upload a pre-recorded video.');
         } else {
@@ -131,7 +131,6 @@ export default function WebcamRecorder({ onRecordingComplete, onCancel }) {
       timerIntervalRef.current = setInterval(() => {
         setElapsedSeconds((prev) => {
           if (prev >= 30) {
-            // Auto stop at 30 seconds
             handleStopRecording();
             return 30;
           }
@@ -175,37 +174,37 @@ export default function WebcamRecorder({ onRecordingComplete, onCancel }) {
   };
 
   return (
-    <div className="space-y-3 p-3 bg-white rounded-2xl border border-[#E5E7E2] shadow-sm animate-fade-in">
+    <div className="space-y-3 p-4 bg-[#FFF9F2] rounded-2xl border border-[#E6D8CB] shadow-xs animate-fade-in">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h4 className="font-bold text-xs text-[#303831] flex items-center gap-1.5">
-            <Camera size={14} className="text-[#46664F]" /> Live Camera Recorder
+            <Camera size={15} className="text-[#722F46]" /> Live Camera Recorder
           </h4>
-          <p className="text-[10px] text-[#5A655C]">Record direct from device camera</p>
+          <p className="text-[10px] text-[#766660]">Record directly with device webcam</p>
         </div>
         {recordingState === 'recording' && (
-          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#C85A48]/15 border border-[#C85A48]/30 text-[#C85A48] text-[11px] font-bold">
-            <span className="w-2 h-2 rounded-full bg-[#C85A48] animate-ping"></span>
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#570F22]/15 border border-[#570F22]/30 text-[#570F22] text-[11px] font-bold">
+            <span className="w-2 h-2 rounded-full bg-[#570F22] animate-ping" />
             <span>00:{elapsedSeconds < 10 ? `0${elapsedSeconds}` : elapsedSeconds} / 00:30</span>
           </div>
         )}
       </div>
 
       {cameraError ? (
-        <div className="p-4 rounded-xl bg-[#C85A48]/10 border border-[#C85A48]/20 text-[#C85A48] text-xs space-y-2 text-center">
+        <div className="p-4 rounded-xl bg-[#C47A32]/10 border border-[#C47A32]/20 text-[#C47A32] text-xs space-y-2 text-center">
           <AlertCircle size={22} className="mx-auto" />
           <p>{cameraError}</p>
           <button
             type="button"
             onClick={onCancel}
-            className="btn-sage text-xs py-1.5 px-3 mt-1"
+            className="btn-warm text-xs py-1.5 px-3 mt-1"
           >
             Switch to File Upload
           </button>
         </div>
       ) : (
-        <div className="relative w-full aspect-[4/3] bg-black rounded-xl overflow-hidden border border-[#E5E7E2]">
+        <div className="relative w-full aspect-[4/3] bg-black rounded-xl overflow-hidden border border-[#E6D8CB]">
           {/* Live Video Feed */}
           {recordingState !== 'preview' ? (
             <video
@@ -226,21 +225,21 @@ export default function WebcamRecorder({ onRecordingComplete, onCancel }) {
 
           {/* Framing Guide Overlay */}
           {recordingState === 'idle' && (
-            <div className="absolute inset-0 pointer-events-none border-2 border-dashed border-[#DCE8D8]/70 m-4 rounded-lg flex flex-col justify-between p-2">
-              <span className="text-[9px] font-bold text-white/90 bg-[#303831]/60 px-2 py-0.5 rounded self-center backdrop-blur-sm">
-                Align Full Body (Head to Feet)
+            <div className="absolute inset-0 pointer-events-none border-2 border-dashed border-[#E6D8CB]/80 m-4 rounded-lg flex flex-col justify-between p-2">
+              <span className="text-[9px] font-bold text-white bg-[#321B1A]/70 px-2 py-0.5 rounded self-center backdrop-blur-xs">
+                Align Full Body (Head to Feet Visible)
               </span>
-              <span className="text-[8px] text-white/80 bg-[#303831]/60 px-2 py-0.5 rounded self-center backdrop-blur-sm">
-                Stand or lie 2.5–3m away in clear lighting
+              <span className="text-[8px] text-white/90 bg-[#321B1A]/70 px-2 py-0.5 rounded self-center backdrop-blur-xs">
+                Stand or lie 2.5–3m away in bright, clear lighting
               </span>
             </div>
           )}
 
           {/* Countdown Overlay */}
           {recordingState === 'countdown' && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center text-white space-y-1">
-              <span className="text-5xl font-black animate-ping text-[#DCE8D8]">{countdown}</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-white">Get in Position...</span>
+            <div className="absolute inset-0 bg-[#321B1A]/80 backdrop-blur-xs flex flex-col items-center justify-center text-white space-y-1">
+              <span className="text-5xl font-black animate-ping text-[#E6D8CB]">{countdown}</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#FFF9F2]">Get in Position...</span>
             </div>
           )}
         </div>
@@ -254,7 +253,7 @@ export default function WebcamRecorder({ onRecordingComplete, onCancel }) {
               type="button"
               onClick={handleStartCountdown}
               disabled={!stream}
-              className="flex-1 btn-forest py-2.5 text-xs flex items-center justify-center gap-1.5"
+              className="flex-1 btn-wine py-2.5 text-xs flex items-center justify-center gap-1.5"
             >
               <Camera size={14} /> Start 3s Countdown & Record
             </button>
@@ -272,7 +271,7 @@ export default function WebcamRecorder({ onRecordingComplete, onCancel }) {
           <button
             type="button"
             onClick={handleStopRecording}
-            className="w-full py-2.5 rounded-xl bg-[#C85A48] hover:bg-[#b04838] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-colors"
+            className="w-full py-2.5 rounded-xl bg-[#570F22] hover:bg-[#321B1A] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-colors"
           >
             <Square size={14} fill="currentColor" /> Stop Recording & Review
           </button>
@@ -290,7 +289,7 @@ export default function WebcamRecorder({ onRecordingComplete, onCancel }) {
             <button
               type="button"
               onClick={handleUseRecording}
-              className="flex-1 btn-forest py-2.5 text-xs flex items-center justify-center gap-1.5"
+              className="flex-1 btn-wine py-2.5 text-xs flex items-center justify-center gap-1.5"
             >
               <CheckCircle2 size={14} /> Use This Video
             </button>
